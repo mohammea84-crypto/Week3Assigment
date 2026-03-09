@@ -1,0 +1,29 @@
+# Urban Scene CNN
+
+CNN model for classifying urban scenes using the MIT Places dataset subset.
+
+## Setup & Run
+
+```bash
+pip install -r requirements.txt
+python urban_scene_cnn.py
+```
+
+## Dataset Structure
+
+```
+data/
+  apartment_building/
+  building_facade/
+  crosswalk/
+  office_building/
+```
+
+## Outputs
+
+All results are saved in the `outputs/` folder:
+- `sample_images.png` — one sample per class
+- `training_curves.png` — loss & accuracy over epochs
+- `confusion_matrix.png` — test set confusion matrix
+- `per_class_accuracy_table.png` — per-class accuracy table
+- `urban_cnn_model.pth` — saved model weights
