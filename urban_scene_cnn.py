@@ -168,3 +168,76 @@ plt.savefig("outputs/training_curves.png", dpi=150)
 plt.close()
 print("Saved: outputs/training_curves.png")
 
+
+# ── STEP 6: Evaluate Model Performance ──────────────────────
+# Commit: "Evaluated CNN model performance on test data"
+
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
+
+def evaluate_model(model, test_loader, classes):
+    model.eval()
+    all_preds, all_labels = [], []
+
+    with torch.no_grad():
+        for images, labels in test_loader:
+            outputs = model(images)
+            _, predicted = torch.max(outputs, 1)
+            all_preds.extend(predicted.numpy())
+            all_labels.extend(labels.numpy())
+
+    acc = sum(p == l for p, l in zip(all_preds, all_labels)) / len(all_labels)
+    print(f"\nTest Accuracy: {acc:.4f}")
+    print("\nClassification Report:")
+    print(classification_report(all_labels, all_preds, target_names=classes))
+
+    # --- Output 3: Confusion Matrix ---
+    cm = confusion_matrix(all_labels, all_preds)
+    plt.figure(figsize=(7, 5))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=classes, yticklabels=classes)
+    plt.title("Confusion Matrix", fontsize=13, fontweight='bold')
+    plt.xlabel("Predicted"); plt.ylabel("Actual")
+    plt.tight_layout()
+    plt.savefig("outputs/confusion_matrix.png", dpi=150)
+    plt.close()
+    print("Saved: outputs/confusion_matrix.png")
+
+    # --- Output 4: Per-class accuracy table ---
+    per_class = {}
+    for i, cls in enumerate(classes):
+        indices = [j for j, l in enumerate(all_labels) if l == i]
+        if indices:
+            correct = sum(1 for j in indices if all_preds[j] == i)
+            per_class[cls] = f"{correct}/{len(indices)} ({correct/len(indices)*100:.1f}%)"
+
+    print("\nPer-class Accuracy:")
+    print(f"{'Class':<25} {'Correct/Total':>15}")
+    print("-" * 42)
+    for cls, val in per_class.items():
+        print(f"{cls:<25} {val:>15}")
+
+    # Save table as image
+    fig, ax = plt.subplots(figsize=(6, 2.5))
+    ax.axis('off')
+    table_data = [[cls, val] for cls, val in per_class.items()]
+    table = ax.table(cellText=table_data,
+                     colLabels=["Class", "Accuracy"],
+                     cellLoc='center', loc='center')
+    table.auto_set_font_size(False)
+    table.set_fontsize(11)
+    table.scale(1.4, 1.6)
+    plt.title("Per-Class Accuracy", fontweight='bold', pad=10)
+    plt.tight_layout()
+    plt.savefig("outputs/per_class_accuracy_table.png", dpi=150, bbox_inches='tight')
+    plt.close()
+    print("Saved: outputs/per_class_accuracy_table.png")
+
+    return acc
+
+test_acc = evaluate_model(model, test_loader, dataset.classes)
+
+# Save the trained model
+torch.save(model.state_dict(), "outputs/urban_cnn_model.pth")
+print("\nModel saved to outputs/urban_cnn_model.pth")
+print("\n✅ All outputs saved in outputs/ folder.")
