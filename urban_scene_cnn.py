@@ -107,3 +107,64 @@ num_classes = len(dataset.classes)
 model = UrbanSceneCNN(num_classes)
 print(model)
 
+
+
+# ── STEP 5: Train the CNN Model ──────────────────────────────
+# Commit: "Trained CNN model for urban scene classification"
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+train_losses, val_accs = [], []
+
+def train_model(model, train_loader, val_loader, optimizer, criterion, epochs=10):
+    for epoch in range(epochs):
+        # --- Training ---
+        model.train()
+        running_loss = 0.0
+        for images, labels in train_loader:
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+
+        avg_loss = running_loss / len(train_loader)
+        train_losses.append(avg_loss)
+
+        # --- Validation ---
+        model.eval()
+        correct, total = 0, 0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                outputs = model(images)
+                _, predicted = torch.max(outputs, 1)
+                total   += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        val_acc = correct / total
+        val_accs.append(val_acc)
+        print(f"Epoch [{epoch+1}/{epochs}] Loss: {avg_loss:.4f}  Val Acc: {val_acc:.4f}")
+
+train_model(model, train_loader, val_loader, optimizer, criterion, epochs=10)
+
+# Save training curve (Output 2 for presentation)
+os.makedirs("outputs", exist_ok=True)
+plt.figure(figsize=(10, 4))
+plt.subplot(1, 2, 1)
+plt.plot(range(1, len(train_losses)+1), train_losses, marker='o', color='steelblue')
+plt.title("Training Loss per Epoch")
+plt.xlabel("Epoch"); plt.ylabel("Loss"); plt.grid(True)
+
+plt.subplot(1, 2, 2)
+plt.plot(range(1, len(val_accs)+1), val_accs, marker='s', color='darkorange')
+plt.title("Validation Accuracy per Epoch")
+plt.xlabel("Epoch"); plt.ylabel("Accuracy"); plt.grid(True)
+
+plt.suptitle("Model Training Curves", fontsize=13, fontweight='bold')
+plt.tight_layout()
+plt.savefig("outputs/training_curves.png", dpi=150)
+plt.close()
+print("Saved: outputs/training_curves.png")
+
